@@ -11,6 +11,12 @@ module dcache_sram
     data_o,
     hit_o
 );
+// Module that store data and tags
+// Module that store data and tags
+// Module that store data and tags
+// Module that store data and tags
+// Module that store data and tags
+// Module that store data and tags
 
 // I/O Interface from/to controller
 input              clk_i;
@@ -27,8 +33,10 @@ output             hit_o;
 
 
 // Memory
+// reg               valid [0:15][0:1];    
 reg      [24:0]    tag [0:15][0:1];    
 reg      [255:0]   data[0:15][0:1];
+reg      lru[0:15]; // Since either entry 0 or 1 will be replace, one bit suffice.
 
 integer            i, j;
 
@@ -43,17 +51,32 @@ always@(posedge clk_i or posedge rst_i) begin
                 tag[i][j] <= 25'b0;
                 data[i][j] <= 256'b0;
             end
+            lru[i] <= 1'b0;
         end
     end
     if (enable_i && write_i) begin
         // TODO: Handle your write of 2-way associative cache + LRU here
+        if (tag[addr_i][0][22:0] == tag_i[22:0]) begin // write hit. what about dirty? -> return the data to output port, so overwrite anyway
+            data[addr_i][0] <= data_i;
+            lru[addr_i] <= 1'b1;
+        end
+        else if (tag[addr_i][1][22:0] == tag_i[22:0])begin // write hit. what about dirty?
+            data[addr_i][1] <= data_i;
+            lru[addr_i] <= 1'b0;
+        end
+        else begin // write miss
+            tag[addr_i][lru[addr_i]] <= tag_i;
+            data[addr_i][lru[addr_i]] <= data_i;
+            lru[addr_i] = lru[addr_i] == 1'b1 ? 1'b0 : 1'b1;
+        end
     end
 end
 
+//sram_tag[23] to indicate if dirty
 // Read Data      
 // TODO: tag_o=? data_o=? hit_o=?
-assign tag_o = tag_i;
-assign data_o = data_i;
-assign hit_o = 1'b1;
+assign tag_o = (enable_i && (tag_i == tag[addr_i][0])) ? tag[addr_i][0] : (enable_i && (tag_i == tag[addr_i][1])) ? tag[addr_i][1] : 25'b0;// ?? Not sure about which tag to return
+assign data_o = (enable_i && (tag_i == tag[addr_i][0])) ? data[addr_i][0] : (enable_i && (tag_i == tag[addr_i][1])) ? data[addr_i][1] : 256'b0;
+assign hit_o = enable_i ? ((tag_i == tag[addr_i][0] || tag_i == tag[addr_i][1])? 1'b1 : 1'b0) : 1'b0;
 
 endmodule

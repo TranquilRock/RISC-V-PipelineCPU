@@ -24,10 +24,12 @@ assign  rd_o = register[2][`REG_SIZE - 1: 0];
 assign  Rs1_o = register[3];
 assign  Rs2_o = register[4];
 always@(posedge clk_i) begin
-    register[0][0] <= RegWrite_i;
-    register[1][0] <= MemtoReg_i;
-    register[2][`REG_SIZE - 1: 0] <= rd_i;
-    register[3] <= Rs1_i;
-    register[4] <= Rs2_i;
+    if (!Data_Stall_i) begin
+        register[0][0] <= RegWrite_i;
+        register[1][0] <= MemtoReg_i;
+        register[2][`REG_SIZE - 1: 0] <= rd_i;
+        register[3] <= Rs1_i;
+        register[4] <= Rs2_i;
+    end
 end
 endmodule

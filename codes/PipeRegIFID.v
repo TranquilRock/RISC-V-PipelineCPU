@@ -17,13 +17,15 @@ assign  PC_o = register[0];
 assign  inst_o = register[1];
 
 always@(posedge clk_i) begin
-    if(Flush_i) begin
-        //PC_o Don't care
-        register[1] <= `DATA_LEN'b0000000_00000_00000_000_00000_0110011;//add r0, r0, r0 not sure
-    end
-    else if (!Stall_i) begin
-        register[0] <= PC_i;
-        register[1] <= inst_i;
+    if (!Data_Stall_i) begin
+        if(Flush_i) begin
+            //PC_o Don't care
+            register[1] <= `DATA_LEN'b0000000_00000_00000_000_00000_0110011;//add r0, r0, r0 not sure
+        end
+        else if (!Stall_i ) begin
+            register[0] <= PC_i;
+            register[1] <= inst_i;
+        end
     end
 end
 endmodule

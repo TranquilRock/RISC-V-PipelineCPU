@@ -34,14 +34,15 @@ assign  ALUResult_o = register[6];
 
 
 always@(posedge clk_i) begin
-    register[0][0] <= RegWrite_i;
-    register[1][0] <= MemtoReg_i;
-    register[2][0] <= MemWrite_i;
-    register[3][0] <=MemRead_i;
-    register[4][`REG_SIZE - 1: 0] <= rd_i;
-    register[5] <= MuxResult_i;
-    register[6] <= ALUResult_i;
-
+    if (!Data_Stall_i) begin
+        register[0][0] <= RegWrite_i;
+        register[1][0] <= MemtoReg_i;
+        register[2][0] <= MemWrite_i;
+        register[3][0] <=MemRead_i;
+        register[4][`REG_SIZE - 1: 0] <= rd_i;
+        register[5] <= MuxResult_i;
+        register[6] <= ALUResult_i;
+    end
     // $fdisplay(32'h8000_0002,"EX_MEM DATA'%b' REG'%b'", MuxResult_i, rd_i);
 
 end

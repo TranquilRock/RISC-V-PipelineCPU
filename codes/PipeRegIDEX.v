@@ -41,15 +41,17 @@ assign  Rd1_o = register[8];
 assign  Rd2_o = register[9];
 
 always@(posedge clk_i) begin
-    register[0][0] <= RegWrite_i;
-    register[1][0] <= MemtoReg_i;
-    register[2][0] <= MemWrite_i;
-    register[3][0] <=MemRead_i;
-    register[4][`ALUOP_LEN - 1 : 0] <= ALUOp_i;
-    register[5][0] <= ALUSrc_i;
-    register[6][`DATA_LEN - 1: 0] <= inst_i;
-    register[7][`DATA_LEN - 1: 0] <= Imm_i;
-    register[8][`DATA_LEN - 1: 0] <= Rd1_i;
-    register[9][`DATA_LEN - 1: 0] <= Rd2_i;
+    if (!Data_Stall_i) begin
+        register[0][0] <= RegWrite_i;
+        register[1][0] <= MemtoReg_i;
+        register[2][0] <= MemWrite_i;
+        register[3][0] <=MemRead_i;
+        register[4][`ALUOP_LEN - 1 : 0] <= ALUOp_i;
+        register[5][0] <= ALUSrc_i;
+        register[6][`DATA_LEN - 1: 0] <= inst_i;
+        register[7][`DATA_LEN - 1: 0] <= Imm_i;
+        register[8][`DATA_LEN - 1: 0] <= Rd1_i;
+        register[9][`DATA_LEN - 1: 0] <= Rd2_i;
+    end
 end
 endmodule

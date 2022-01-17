@@ -71,7 +71,7 @@ always@(posedge clk_i) begin
             data <= data_i;
         end
         else begin
-            data <= memory[addr];
+            data = memory[addr];
         end
     end
 end

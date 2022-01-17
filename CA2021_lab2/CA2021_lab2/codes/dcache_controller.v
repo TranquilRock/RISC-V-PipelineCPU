@@ -83,7 +83,7 @@ wire    [4:0]         cpu_offset;
 wire    [3:0]         cpu_index;
 wire    [22:0]        cpu_tag;
 wire    [255:0]       r_hit_data;
-wire    [21:0]        sram_tag; // 21 or 22??
+wire    [21:0]        sram_tag;
 wire                  hit;
 reg     [255:0]       w_hit_data;
 wire                  write_hit;
@@ -99,7 +99,7 @@ assign    cpu_stall_o = ~hit & cpu_req;
 assign    cpu_data_o  = cpu_data; 
 
 // to SRAM interface
-assign    sram_valid = sram_cache_tag[24]; //from last round
+assign    sram_valid = sram_cache_tag[24];
 assign    sram_dirty = sram_cache_tag[23];
 assign    sram_tag   = sram_cache_tag[22:0];
 assign    cache_sram_index  = cpu_index;
@@ -118,52 +118,15 @@ assign    write_hit    = hit & cpu_MemWrite_i;
 assign    cache_dirty  = write_hit;
 
 // TODO: add your code here!  (r_hit_data=...?)
-assign r_hit_data = (hit) ? sram_cache_data : 256'b0; // not sure. note sram_cache_data is from the last cache access. 
 // read data :  256-bit to 32-bit
-
 always@(cpu_offset or r_hit_data) begin
     // TODO: add your code here! (cpu_data=...?)
-    //Only handle address that are 4 bytes aligned.
-    // case (cpu_offset)
-    //     5'd0:begin
-    //         cpu_data = r_hit_data[31:0];
-    //     end
-    //     5'd4:begin
-    //         cpu_data = r_hit_data[63:32];
-    //     end
-    //     5'd8:begin
-    //         cpu_data = r_hit_data[95:64];
-    //     end
-    //     5'd12:begin
-    //         cpu_data = r_hit_data[127:96];
-    //     end
-    //     5'd16:begin
-    //         cpu_data = r_hit_data[159:128];
-    //     end
-    //     5'd20:begin
-    //         cpu_data = r_hit_data[191:160];
-    //     end
-    //     5'd24:begin
-    //         cpu_data = r_hit_data[223:192];
-    //     end
-    //     5'd28:begin
-    //         cpu_data = r_hit_data[255:224];
-    //     end
-    //     default: 
-    //         $fdisplay(32'h8000_0002,"Cache offset not aligned!? %b",cpu_data);
-    // endcase
-    // TODO Difficulty1 : verilator disallow dynamic slicing????? Solved by +:
-    cpu_data = r_hit_data[cpu_offset * 8 +: 32];
-    // Problem assign in nonclock ..? <= or =
 end
 
 
 // write data :  32-bit to 256-bit
 always@(cpu_offset or r_hit_data or cpu_data_i) begin
     // TODO: add your code here! (w_hit_data=...?)
-    //Bug1 need to retain old data.
-    w_hit_data = r_hit_data;
-    w_hit_data[cpu_offset * 8 +: 32] = cpu_data_i;
 end
 
 
@@ -171,10 +134,10 @@ end
 always@(posedge clk_i or posedge rst_i) begin
     if(rst_i) begin
         state       <= STATE_IDLE;
-        mem_enable  <= 1'b0; // enable operation on mem. Why need?
-        mem_write   <= 1'b0; // write to memory
-        cache_write <= 1'b0; // write to cache
-        write_back  <= 1'b0; // if true, the tag would be from sram
+        mem_enable  <= 1'b0;
+        mem_write   <= 1'b0;
+        cache_write <= 1'b0; 
+        write_back  <= 1'b0;
     end
     else begin
         case(state)        
@@ -189,31 +152,16 @@ always@(posedge clk_i or posedge rst_i) begin
             STATE_MISS: begin
                 if(sram_dirty) begin          // write back if dirty
                     // TODO: add your code here! 
-                    // hit-> write_i enable_i
-                    //Difficulty3 every wire is assigned, what should be done here? Solve -> using controller regs
-                    mem_enable <= 1'b1; // cache to mem
-                    mem_write <= 1'b1;  // cache to mem
-                    // cache_write <= 1'b0; // cache is up to date.
-                    write_back <= 1'b1; // need the tag from sram, not sure.
                     state <= STATE_WRITEBACK;
                 end
                 else begin                    // write allocate: write miss = read miss + write hit; read miss = read miss + read hit
                     // TODO: add your code here! 
-                    // Difficulty 4 where should the write be taken? As long as the signal is set, write will be done by DataMem.
-                    mem_enable <= 1'b1; // take from mem
-                    // mem_write <= 1'b0;
-                    // cache_write <= 1'b1; // write to cache(allocate)
-                    // write_back <= 1'b0; // use cpu's tag
                     state <= STATE_READMISS;
                 end
             end
             STATE_READMISS: begin
                 if(mem_ack_i) begin            // wait for data memory acknowledge
                     // TODO: add your code here! 
-                    mem_enable <= 1'b0; // ready in cache
-                    // mem_write <= 1'b0; // no write
-                    cache_write <= 1'b1; // write to cache(allocate)
-                    // write_back <= 1'b0; // use cpu's tag
                     state <= STATE_READMISSOK;
                 end
                 else begin
@@ -222,28 +170,16 @@ always@(posedge clk_i or posedge rst_i) begin
             end
             STATE_READMISSOK: begin            // wait for data memory acknowledge
                 // TODO: add your code here! 
-                // mem_enable <= 1'b0; // ready in cache
-                mem_write <= 1'b0; // no write
-                // cache_write <= 1'b0; // done
-                // write_back <= 1'b0; // use cpu's tag
                 state <= STATE_IDLE;
             end
-            STATE_WRITEBACK: begin // write hit
+            STATE_WRITEBACK: begin
                 if(mem_ack_i) begin            // wait for data memory acknowledge
                     // TODO: add your code here! 
-                    //memory ready, write to cache(hit) and 
-                    // mem_enable <= 1'b0; // ready in cache
-                    mem_write <= 1'b0; // no write
-                    // cache_write <= 1'b1; // done
-                    write_back <= 1'b0; // use cpu's tag
                     state <= STATE_READMISS;
                 end
                 else begin
                     state <= STATE_WRITEBACK;
                 end
-            end
-            default: begin
-                
             end
         endcase
     end

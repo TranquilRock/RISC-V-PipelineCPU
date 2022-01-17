@@ -3,7 +3,14 @@ module CPU
 (
     input clk_i, 
     input rst_i,
-    input start_i
+    input start_i,
+
+    input  [256-1:0] mem_data_i, 
+    input mem_ack_i,     
+    output [256-1:0] mem_data_o, 
+    output [32-1:0] mem_addr_o,     
+    output mem_enable_o, 
+    output mem_write_o
 );
 
 wire[`DATA_LEN - 1:0] IF_inst;
@@ -262,35 +269,17 @@ PipeRegEXMEM EXMEM(
     .ALUResult_o(MEM_ALUResult)
 );
 
-wire [255:0]cache_data;
-wire [31:0] cache_addr;
-wire cache_enable;
-wire cache_write;
-wire [255:0]mem_data;
-wire mem_ack;
-Data_Memory Data_Memory(
-    .clk_i(clk_i), 
-    .rst_i(rst_i),
-    .addr_i(cache_addr), 
-    .data_i(cache_data),
-    .enable_i(cache_enable),
-    .write_i(cache_write),
-
-    .data_o(mem_data),
-    .ack_o(mem_ack)
-);
-
-dcache_controller Cache(
+dcache_controller dcache(
     .clk_i(clk_i),
     .rst_i(rst_i),
     // to Data Memory interface
-    .mem_data_i(mem_data), 
-    .mem_ack_i(mem_ack),
+    .mem_data_i(mem_data_i), 
+    .mem_ack_i(mem_ack_i),
 
-    .mem_data_o(cache_data), 
-    .mem_addr_o(cache_addr),     
-    .mem_enable_o(cache_enable), 
-    .mem_write_o(cache_write), 
+    .mem_data_o(mem_data_o), 
+    .mem_addr_o(mem_addr_o),     
+    .mem_enable_o(mem_enable_o), 
+    .mem_write_o(mem_write_o), 
     // to CPU interface    
     .cpu_data_i(MEM_MuxResult),
     .cpu_addr_i(MEM_ALUResult), 
