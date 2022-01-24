@@ -1,8 +1,8 @@
 `include "Define.v"
 module ALU
 (
-    input [`DATA_LEN - 1: 0] data1_i,
-    input [`DATA_LEN - 1: 0] data2_i,
+    input signed [`DATA_LEN - 1: 0] data1_i,
+    input signed [`DATA_LEN - 1: 0] data2_i,
     input [`CRTL_LEN - 1: 0] ALUCtrl_i,
     output reg[`DATA_LEN - 1: 0] data_o = `DATA_LEN'b0,
     output reg Zero_o = 1'b0

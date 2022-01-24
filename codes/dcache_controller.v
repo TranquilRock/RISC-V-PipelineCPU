@@ -83,7 +83,7 @@ wire    [4:0]         cpu_offset;
 wire    [3:0]         cpu_index;
 wire    [22:0]        cpu_tag;
 wire    [255:0]       r_hit_data;
-wire    [21:0]        sram_tag; // 21 or 22??
+wire    [22:0]        sram_tag; // 21 or 22??
 wire                  hit;
 reg     [255:0]       w_hit_data;
 wire                  write_hit;
@@ -153,8 +153,8 @@ always@(cpu_offset or r_hit_data) begin
     //         $fdisplay(32'h8000_0002,"Cache offset not aligned!? %b",cpu_data);
     // endcase
     // TODO Difficulty1 : verilator disallow dynamic slicing????? Solved by +:
-    cpu_data = r_hit_data[cpu_offset * 8 +: 32];
     // Problem assign in nonclock ..? <= or =
+    cpu_data = r_hit_data[cpu_offset * 8 +: 32];
 end
 
 
@@ -193,17 +193,17 @@ always@(posedge clk_i or posedge rst_i) begin
                     //Difficulty3 every wire is assigned, what should be done here? Solve -> using controller regs
                     mem_enable <= 1'b1; // cache to mem
                     mem_write <= 1'b1;  // cache to mem
-                    // cache_write <= 1'b0; // cache is up to date.
-                    write_back <= 1'b1; // need the tag from sram, not sure.
+                    cache_write <= 1'b0; // cache is up to date.
+                    write_back <= 1'b1; // need the tag from sram.
                     state <= STATE_WRITEBACK;
                 end
                 else begin                    // write allocate: write miss = read miss + write hit; read miss = read miss + read hit
                     // TODO: add your code here! 
                     // Difficulty 4 where should the write be taken? As long as the signal is set, write will be done by DataMem.
-                    mem_enable <= 1'b1; // take from mem
-                    // mem_write <= 1'b0;
-                    // cache_write <= 1'b1; // write to cache(allocate)
-                    // write_back <= 1'b0; // use cpu's tag
+                    mem_enable <= 1'b1; // Take from mem
+                    mem_write <= 1'b0;
+                    cache_write <= 1'b0; 
+                    write_back <= 1'b0; // use cpu's tag
                     state <= STATE_READMISS;
                 end
             end
@@ -211,9 +211,9 @@ always@(posedge clk_i or posedge rst_i) begin
                 if(mem_ack_i) begin            // wait for data memory acknowledge
                     // TODO: add your code here! 
                     mem_enable <= 1'b0; // ready in cache
-                    // mem_write <= 1'b0; // no write
+                    mem_write <= 1'b0; // no write
                     cache_write <= 1'b1; // write to cache(allocate)
-                    // write_back <= 1'b0; // use cpu's tag
+                    write_back <= 1'b0; // use cpu's tag
                     state <= STATE_READMISSOK;
                 end
                 else begin
@@ -222,19 +222,19 @@ always@(posedge clk_i or posedge rst_i) begin
             end
             STATE_READMISSOK: begin            // wait for data memory acknowledge
                 // TODO: add your code here! 
-                // mem_enable <= 1'b0; // ready in cache
+                mem_enable <= 1'b0; // ready in cache
                 mem_write <= 1'b0; // no write
-                // cache_write <= 1'b0; // done
-                // write_back <= 1'b0; // use cpu's tag
+                cache_write <= 1'b0; // done
+                write_back <= 1'b0; // use cpu's tag
                 state <= STATE_IDLE;
             end
             STATE_WRITEBACK: begin // write hit
                 if(mem_ack_i) begin            // wait for data memory acknowledge
                     // TODO: add your code here! 
                     //memory ready, write to cache(hit) and 
-                    // mem_enable <= 1'b0; // ready in cache
+                    mem_enable <= 1'b1; // ready in cache
                     mem_write <= 1'b0; // no write
-                    // cache_write <= 1'b1; // done
+                    cache_write <= 1'b0;
                     write_back <= 1'b0; // use cpu's tag
                     state <= STATE_READMISS;
                 end

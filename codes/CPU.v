@@ -315,5 +315,6 @@ MUX2 WB_MUX(
 );
 endmodule
 
-// always @*
+// always @* begin
 //     $display("%b",{IF_inst[31:25], IF_inst[14:12]});
+// end
